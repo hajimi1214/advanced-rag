@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# 数据与模型
+data/
+data/docs/
+models/
+*.db
+
+# 环境与密钥
+.env
+*.key
+
+# IDE
+.idea/
+.vscode/
+.DS_Store
