@@ -11,6 +11,7 @@ import shutil
 from pathlib import Path
 
 from fastapi import FastAPI, File, UploadFile
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from .hybrid import HybridRetriever
@@ -69,5 +70,16 @@ def ask(q: Query):
         source = next((c["source"] for c in candidates if c["text"] == doc), "")
         contexts.append({"text": doc, "source": source, "score": round(score, 4)})
 
-    answer = generate_answer(q.question, contexts)
-    return {"question": q.question, "answer": answer, "contexts": contexts}
+    # 优雅降级：LLM 未配置（无 API key 且无本地 Ollama）时，返回纯检索结果
+    try:
+        answer = generate_answer(q.question, contexts)
+        mode = "llm"
+    except Exception:
+        answer = None
+        mode = "retrieval_only"
+    return {"question": q.question, "answer": answer, "contexts": contexts, "mode": mode}
+
+
+# 前端界面（挂在最后，避免拦截上方 API 路由）
+STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
+app.mount("/", StaticFiles(directory=str(STATIC_DIR), html=True), name="static")
